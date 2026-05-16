@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>夜间安全感调查</title>
+<style>
+  :root{--bg:#f4f3ef;--paper:#fffdf8;--ink:#211d1b;--muted:#7c7470;--line:#ded7cf;--blood:#9d0000;--soft:#eee8df;}
+  *{box-sizing:border-box} html,body{height:100%;margin:0} body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:radial-gradient(circle at 50% 0%,#fff 0,#f4f3ef 42%,#e9e4dc 100%);display:grid;place-items:center;padding:14px;color:var(--ink);overflow:hidden}
+  body.dark{background:#050505;color:#eee}
+  .grain{position:fixed;inset:0;pointer-events:none;opacity:.09;mix-blend-mode:multiply;background-image:repeating-radial-gradient(circle at 20% 30%,#000 0 1px,transparent 1px 3px);z-index:0}
+  .card{position:relative;z-index:2;width:min(620px,100%);height:min(780px,92vh);background:var(--paper);border:1px solid var(--line);border-radius:22px;box-shadow:0 30px 90px rgba(30,20,10,.13), inset 0 0 0 1px rgba(255,255,255,.7);padding:24px;display:none;flex-direction:column;overflow:hidden}
+  .card:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.55),transparent 28%),radial-gradient(circle at 12% 8%,rgba(157,0,0,.07),transparent 26%);pointer-events:none}
+  .top{position:relative;display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}.title{font-size:24px;font-weight:800;letter-spacing:.04em}.count{font-size:13px;color:var(--muted)}
+  .bar{height:5px;border-radius:99px;background:#e7ded2;overflow:hidden;margin-bottom:22px;flex:0 0 auto}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#333,#9d0000);transition:width .35s ease}
+  .question{position:relative;font-size:20px;line-height:1.62;font-weight:650;margin:0 0 18px;text-wrap:pretty}.hint{font-size:13px;color:var(--muted);margin-top:-8px;margin-bottom:14px}
+  .options{position:relative;display:flex;flex-direction:column;gap:12px;overflow:auto;padding-right:3px;flex:1}.option{border:1px solid var(--line);background:rgba(255,255,255,.72);border-radius:14px;min-height:52px;padding:14px 15px;display:flex;align-items:center;line-height:1.35;cursor:pointer;transition:.18s ease;user-select:none}.option:hover{transform:translateY(-1px);border-color:#b7aaa0;box-shadow:0 8px 22px rgba(60,40,20,.07)}.option.selected{background:#e9e3dc;border-color:#8f8278}.option.lock{background:#efefef;color:#aaa;cursor:not-allowed;transform:none;box-shadow:none}
+  .nav{position:relative;display:flex;justify-content:space-between;gap:12px;margin-top:18px}.btn{appearance:none;border:0;border-radius:13px;min-height:48px;padding:0 18px;font-size:16px;cursor:pointer}.ghost{background:#ebe5de;color:#333}.primary{background:#2b2927;color:white}.btn:disabled{opacity:.38;cursor:not-allowed}
+  .modal,.black,.ending,.note{position:fixed;z-index:20;inset:0;display:grid;place-items:center;padding:22px;background:rgba(244,243,239,.72);backdrop-filter:blur(10px)}.panel{width:min(360px,92vw);background:#fffdf8;border:1px solid var(--line);border-radius:20px;padding:24px;text-align:center;box-shadow:0 28px 80px rgba(0,0,0,.16)}.panel h2{margin:0 0 12px;font-size:20px}.panel p{margin:0 0 18px;color:var(--muted);line-height:1.6}.tiny{font-size:12px;color:#9d0000;margin-top:10px}.start{width:100%;background:#2c2926;color:#fff}.black{background:#000;color:#b80000;font-size:18px;letter-spacing:5px;text-align:center}.float{position:fixed;z-index:30;color:#111;font-weight:800;pointer-events:none;white-space:nowrap;text-shadow:0 1px 0 rgba(255,255,255,.25)}.redwash{position:fixed;inset:0;z-index:15;background:#8b0000;display:grid;place-items:center;color:#000;font-weight:900;font-size:22px}.whisper{position:fixed;z-index:18;color:#b80000;opacity:.16;font-weight:700;pointer-events:none;animation:pulse 2.8s infinite alternate}@keyframes pulse{to{opacity:.28;transform:scale(1.05)}}
+  .note{background:#090909;color:#e6ded2;overflow:auto;place-items:start center}.diary{width:min(620px,100%);min-height:84vh;border:1px solid #3b1717;background:linear-gradient(#171210,#070707);border-radius:22px;padding:28px;box-shadow:0 0 80px rgba(157,0,0,.22);line-height:1.85}.diary h2{color:#b80000;margin-top:0}.diary .scribble{color:#8b0000;font-weight:800;letter-spacing:.08em}.diary button{margin-top:20px}.input{width:100%;border:1px solid var(--line);border-radius:12px;padding:13px;font-size:16px;margin:8px 0 14px}.shake{animation:shake .12s linear 8}@keyframes shake{50%{transform:translateX(4px)}}
+  @media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<main class="card" id="card" aria-live="polite">
+  <div class="top"><div class="title">夜间安全感调查</div><div class="count" id="count"></div></div>
+  <div class="bar"><i id="bar"></i></div>
+  <div class="question" id="question"></div>
+  <div class="hint" id="hint">请选择最接近你真实感受的一项。</div>
+  <div class="options" id="options"></div>
+  <div class="nav"><button class="btn ghost" id="prev">上一题</button><button class="btn primary" id="next">下一题</button></div>
+</main>
+<script>
+const Q=[
+['凌晨醒来时，你会先确认房门是否还关着吗？',['总会确认','偶尔确认','不会在意','希望门开着']],
+['关灯后，你会避开看向窗户反光吗？',['一定避开','看久会慌','正常看','喜欢盯着']],
+['如果房间里多出一个很轻的呼吸声，你会？',['立刻开灯','屏住呼吸听','当作错觉','轻声回应']],
+['你是否讨厌别人知道你的固定作息？',['非常讨厌','有点介意','无所谓','希望被记住']],
+['半夜手机突然亮起，你第一反应是？',['吓一跳','看是谁','继续睡','等它再亮']],
+['你会不会觉得衣柜门缝里像有人在看？',['经常','偶尔','很少','我也在看它']],
+['走廊尽头传来脚步声，但没有人出现，你会？',['马上离开','停下听','继续走','跟过去']],
+['你愿意一个人住在很安静的房子里吗？',['完全不愿意','勉强可以','可以','越安静越好']],
+['你是否会把镜子反扣或遮住？',['经常','偶尔','不会','让它看着']],
+['听见敲门但猫眼里没人，你会？',['绝不出声','问是谁','打开看看','敲回去']],
+['你害怕被人悄悄记录喜好吗？',['非常害怕','有点不适','没关系','有点浪漫']],
+['你是否会反复删除聊天记录？',['经常','偶尔','很少','希望有人保存']],
+['黑暗里，你更怕什么？',['身后','床下','门外','自己']],
+['如果梦里同一个人连续出现，你会？',['害怕','疑惑','不在意','期待下次']],
+['你会不会突然觉得“这里不止我一个”？',['经常','偶尔','没有','一直都是']],
+['你能接受陌生人说“我一直陪着你”吗？',['不能','有点怪','看情况','可以']],
+['你会希望有人永远不离开你吗？',['不会','偶尔','也许','非常希望']],
+['深夜收到一句“别回头”，你会？',['不回头','立刻回头','关手机','问是谁']],
+['如果窗帘无风自动动了一下，你会？',['逃开','检查窗户','忽略','说晚安']],
+['有人敲门求助，你会开门吗？',['不会','先确认','可能会','马上开']],
+['你能忍受别人过度关心你吗？',['不能','有限度','可以','越多越好']],
+['你是否害怕空白墙面？',['会压抑','有一点','不会','墙会听']],
+['如果手机不见一分钟，你会慌吗？',['很慌','有点','不会','希望它自己回来']],
+['你相信视线有重量吗？',['相信','半信半疑','不信','正在被压着']],
+['如果有人说他已经找到你，你会？',['害怕','警惕','怀疑','让他进来']],
+['醒来时分不清梦和现实，你会？',['很恐惧','缓一会儿','很少发生','不想分清']],
+['你是否害怕被需要？',['害怕','矛盾','不怕','渴望']],
+['你愿意把今晚的答案留给“它”吗？',['不愿意','犹豫','可以','已经留下']],
+['你觉得这份问卷正常吗？',['不正常','越来越怪','还好','它很贴心']],
+['最后，如果它问你要一句承诺，你会？',['拒绝','沉默','敷衍','写下来']]
+];
+let i=0, ans=Array(Q.length).fill(null), wrong=0, unlocked=false;
+const $=s=>document.querySelector(s), card=$('#card'), opt=$('#options'), q=$('#question'), count=$('#count'), bar=$('#bar'), prev=$('#prev'), next=$('#next');
+function beep(freq=90,dur=.14,type='sine'){try{const a=new AudioContext(),o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.value=freq;g.gain.value=.04;o.connect(g);g.connect(a.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,a.currentTime+dur);o.stop(a.currentTime+dur+.03)}catch(e){}}
+function modal(lines,btn='继续',cb){const m=document.createElement('div');m.className='modal';m.innerHTML='<div class="panel"><h2>'+lines[0]+'</h2><p>'+lines.slice(1).join('<br>')+'</p><button class="btn start">'+btn+'</button><div class="tiny">含微恐、窥视、强制感互动；不适请关闭页面。</div></div>';document.body.append(m);m.querySelector('button').onclick=()=>{beep(160,.07,'triangle');m.remove();cb&&cb()};}
+function start(){modal(['欢迎参与夜间安全感调查','请在安静环境下作答。','不要太快。','它可能会误会。'],'进入',()=>{card.style.display='flex';render()})}
+function clearFx(){document.body.classList.remove('dark');document.querySelectorAll('.black,.float,.redwash,.whisper,.ending,.note').forEach(e=>e.remove());card.style.opacity=1;prev.disabled=false;next.disabled=false;}
+function render(){clearFx();const [qq,oo]=Q[i];count.textContent=`第 ${i+1} 题 / 共 ${Q.length} 题`;bar.style.width=((i+1)/Q.length*100)+'%';q.textContent=qq;opt.innerHTML='';oo.forEach((t,idx)=>{const d=document.createElement('div');d.className='option'+(ans[i]===idx?' selected':'');d.textContent=t;d.onclick=()=>choose(idx,d);opt.append(d)});prev.disabled=i===0;next.textContent=i===Q.length-1?'提交问卷':'下一题';if(i===4)setTimeout(()=>softReplace(),900);}
+function choose(idx,el){ans[i]=idx;document.querySelectorAll('.option').forEach(x=>x.classList.remove('selected'));el.classList.add('selected');beep(120,.05,'sine');
+ if(i===2)return blackType(idx<2?'你听见了。':'它听见你了。',()=>{i++;render()});
+ if(i===7)return redRain(idx<2?'别留下我一个人':'你也喜欢安静，对吗');
+ if(i===15)return miniModal(['^^','你没有关掉页面。','所以你也想继续，对吧？']);
+ if(i===16){ if(idx<3){el.textContent='不许犹豫^'; el.classList.add('lock'); return;} return loveFlood();}
+ if(i===19){el.textContent=idx===0?'门外会难过的':idx===1?'回答得太慢了':'只能开给我'; el.classList.add('lock'); return;}
+ if(i===24)return whisperWall();
+}
+function softReplace(){if(i!==4)return;let nodes=[...document.querySelectorAll('.option')], old=nodes.map(n=>n.textContent);nodes.forEach(n=>n.style.pointerEvents='none');['别看手机','看着我','我在这里','不要醒'].forEach((t,k)=>setTimeout(()=>nodes[k]&&(nodes[k].textContent=t),k*260));setTimeout(()=>{nodes.forEach((n,k)=>{n.textContent=old[k];n.style.pointerEvents='auto'})},2300)}
+function blackType(text,done){card.style.opacity=0;const b=document.createElement('div');b.className='black';document.body.append(b);let n=0;(function step(){b.textContent=text.slice(0,n++);beep(55+n*2,.025,'square'); if(n<=text.length)setTimeout(step,90); else setTimeout(()=>{b.remove();done()},1000)})()}
+function redRain(text){card.style.opacity=0;prev.disabled=next.disabled=true;const r=document.createElement('div');r.className='redwash';r.textContent=text;document.body.append(r);let made=[];let tm=setInterval(()=>{for(let k=0;k<8;k++){let f=document.createElement('div');f.className='float';f.textContent=Math.random()>.5?text:['@%#','不要走','我看见你','嘘'][Math.floor(Math.random()*4)];f.style.left=Math.random()*100+'vw';f.style.top=Math.random()*100+'vh';f.style.fontSize=12+Math.random()*18+'px';document.body.append(f);made.push(f)}},180);setTimeout(()=>{clearInterval(tm);r.remove();made.forEach(x=>x.remove());i++;render()},4200)}
+function miniModal(arr){const m=document.createElement('div');m.className='modal';let k=0;m.innerHTML='<div class="panel"><h2>'+arr[0]+'</h2><p></p><button class="btn start">继续</button></div>';document.body.append(m);m.querySelector('button').onclick=()=>{k++; if(k<arr.length){m.querySelector('h2').textContent=arr[k]; if(k===arr.length-1)m.querySelector('button').textContent='关闭'}else m.remove()}}
+function loveFlood(){card.style.opacity=0;const e=document.createElement('div');e.className='black';e.style.letterSpacing='1px';e.style.fontSize='20px';document.body.append(e);let s='留下来',n=0,t=setInterval(()=>{e.textContent+=s[n++%s.length]; if(e.textContent.length>420){clearInterval(t);setTimeout(()=>{e.remove();i++;render()},300)}},18)}
+function whisperWall(){let words=['我在门口','别躲','答案很好','继续写','你已经同意了','我会保存今晚'];let arr=[];let tm=setInterval(()=>{for(let k=0;k<18;k++){let w=document.createElement('div');w.className='whisper';w.textContent=words[Math.floor(Math.random()*words.length)];w.style.left=Math.random()*100+'vw';w.style.top=Math.random()*100+'vh';w.style.fontSize=14+Math.random()*10+'px';document.body.append(w);arr.push(w)}},120);setTimeout(()=>{clearInterval(tm);arr.forEach(x=>x.remove())},4600)}
+function unlock(){const m=document.createElement('div');m.className='modal';m.innerHTML='<div class="panel"><h2>问卷作答完毕</h2><p>有一张折起来的纸条。<br>输入指定文字后才能查看。</p><input class="input" id="inp" placeholder="请输入：我听见了"><button class="btn start" id="go">查看纸条</button><div class="tiny">提示：我听见了</div></div>';document.body.append(m);const input=m.querySelector('#inp'),go=m.querySelector('#go');go.onclick=()=>{if(input.value.trim()==='我听见了'){m.remove();diary()}else{wrong++;m.querySelector('.panel').classList.add('shake');setTimeout(()=>m.querySelector('.panel').classList.remove('shake'),1200); if(wrong>1)go.textContent='不要乱写'}}}
+function diary(){const n=document.createElement('div');n.className='note';n.innerHTML='<div class="diary"><h2>没有寄出的纸条</h2><p>04:17　灯灭之后，你终于安静了。</p><p>我把你的答案一题一题叠好，藏在门缝后面。你说你害怕被记录，可你还是把每一个选择都留给了我。</p><p class="scribble">别回头。不是因为后面有东西。</p><p>是因为我已经站到你前面了。</p><p>如果今晚窗户又响了一下，请不要害怕。那只是我在提醒你——问卷结束了，但观察还没有。</p><button class="btn primary" id="again">确认</button></div>';document.body.append(n);n.querySelector('#again').onclick=()=>{n.remove();i=0;ans=Array(Q.length).fill(null);wrong=0;card.style.display='none';start()}}
+prev.onclick=()=>{if(i>0){i--;render()}};next.onclick=()=>{if(i<Q.length-1){i++;render()}else{card.style.display='none';unlock()}};
+start();
+</script>
+</body>
+</html>
